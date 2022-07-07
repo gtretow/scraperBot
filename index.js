@@ -1,8 +1,7 @@
-"use strict";
-
 const puppeteer = require("puppeteer");
 const readlineSync = require("readline-sync");
-require("dotenv").config();
+const fs = require("fs");
+//require("dotenv").config();
 
 console.log("Informe o que você deseja fazer");
 
@@ -26,6 +25,40 @@ readlineSync.promptCLLoop({
     );
     await browser.close();
     console.log("fim do processo");
+  },
+  instagram: async function () {
+    const browser = await puppeteer.launch({
+      headless: false,
+      args: [
+        "--disable-web-security",
+        "--disable-features=IsolateOrigins",
+        "--disable-site-isolation-trials",
+        "--disable-features=BlockInsecurePrivateNetworkRequests",
+      ],
+    });
+    const page = await browser.newPage();
+    await page.setBypassCSP(true);
+    await page.goto("https://www.instagram.com/gtretow");
+
+    const imgList = await page.evaluate(() => {
+      const nodeList = document.querySelectorAll("article img");
+      const imgArray = [...nodeList];
+      const imgList = imgArray.map(({ src }) => ({
+        src,
+      }));
+
+      return imgList;
+    });
+
+    fs.writeFile("items.json", JSON.stringify(imgList, null, 2), (err) => {
+      if (err) {
+        throw new Error("something went wrong");
+      }
+
+      console.log("finished");
+    });
+
+    await browser.close();
   },
   bye: function () {
     console.log("bye");
