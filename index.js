@@ -1,7 +1,6 @@
 const puppeteer = require("puppeteer");
 const readlineSync = require("readline-sync");
 const fs = require("fs");
-//require("dotenv").config();
 
 console.log("Informe o que você deseja fazer");
 
@@ -27,24 +26,17 @@ readlineSync.promptCLLoop({
     console.log("fim do processo");
   },
   instagram: async function () {
-    const browser = await puppeteer.launch({
-      headless: false,
-      args: [
-        "--disable-web-security",
-        "--disable-features=IsolateOrigins",
-        "--disable-site-isolation-trials",
-        "--disable-features=BlockInsecurePrivateNetworkRequests",
-      ],
-    });
+    const browser = await puppeteer.launch();
+
+    let profile = readlineSync.question("Informe a conta a ser pesquisada:");
     const page = await browser.newPage();
-    await page.setBypassCSP(true);
-    await page.goto("https://www.instagram.com/gtretow");
+    await page.goto(`https://www.instagram.com/${profile}`);
 
     const imgList = await page.evaluate(() => {
       const nodeList = document.querySelectorAll("article img");
       const imgArray = [...nodeList];
       const imgList = imgArray.map(({ src }) => ({
-        src,
+        src: `https://cors-anywhere.herokuapp.com/${src}`,
       }));
 
       return imgList;
@@ -60,8 +52,16 @@ readlineSync.promptCLLoop({
 
     await browser.close();
   },
+  adidas: async function () {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.goto("https://www.adidas.com.br/");
+    await page.screenshot({ path: "example.png" });
+
+    await browser.close();
+  },
   bye: function () {
     console.log("bye");
-    return true;
+    return;
   },
 });

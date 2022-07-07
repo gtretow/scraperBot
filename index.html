@@ -4,13 +4,13 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Response</title>
+    <title>Document</title>
   </head>
   <body>
     <style>
       .container {
         display: flex;
-        gap: 0.4rem;
+        gap: 0.4rm;
       }
 
       li {
@@ -27,11 +27,14 @@
     <div class="container"></div>
     <script>
       (async () => {
-        const response = await fetch("./items.json");
+        const response = await fetch("./instagram.json");
         const data = await response.json();
         const htmlList = data
-          .map(({ src }) => `<li><img src="${src}"></li>`)
+          .map(
+            ({ src }) => `<li><img crossorigin="anonymous" src="${src}"></li>`
+          )
           .join("");
+
         document.querySelector(".container").innerHTML = htmlList;
       })();
     </script>
