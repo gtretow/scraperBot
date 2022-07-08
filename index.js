@@ -1,5 +1,6 @@
 const puppeteer = require("puppeteer");
 const readlineSync = require("readline-sync");
+const { Cluster } = require("puppeteer-cluster");
 const fs = require("fs");
 
 console.log("Informe o que você deseja fazer");
@@ -52,12 +53,85 @@ readlineSync.promptCLLoop({
 
     await browser.close();
   },
-  adidas: async function () {
+  mercadoLivre: async function () {
     const browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.goto("https://www.adidas.com.br/");
-    await page.screenshot({ path: "example.png" });
+    const cluster = await Cluster.launch({
+      concurrency: Cluster.CONCURRENCY_PAGE,
+      maxConcurrency: 10,
+    });
 
+    let sitePages = 1;
+    const list = [];
+
+    let search = readlineSync.question("Informe sua pesquisa:");
+    const page = await browser.newPage();
+    await page.goto(`https://www.mercadolivre.com.br/`);
+
+    await page.waitForSelector("#cb1-edit");
+
+    await page.type(".nav-search-input", search);
+
+    await Promise.all([
+      page.waitForNavigation(),
+      page.click(".nav-search-btn"),
+    ]);
+
+    console.log("iniciando busca por produtos");
+
+    const links = await page.$$eval(".ui-search-result__image > a", (el) =>
+      el.map((link) => link.href).slice(0, 10)
+    );
+
+    cluster.on("taskerror", (err, data) => {
+      console.log(`error crawling ${data}: ${err.message}`);
+    });
+    await cluster.task(async ({ page, data: url }) => {
+      await page.goto(url);
+
+      await page.waitForSelector(".ui-pdp-title");
+      const title = await page.$eval(
+        ".ui-pdp-title",
+        (element) => element.innerText
+      );
+
+      const price = await page.$eval(
+        ".andes-money-amount__fraction",
+        (element) => element.innerText
+      );
+
+      const seller = await page.evaluate(() => {
+        const el = document.querySelector(".ui-pdp-seller__link-trigger");
+        if (!el) {
+          return null;
+        }
+        return el.innerText;
+      });
+
+      const obj = {};
+      obj.title = title;
+      obj.price = price;
+      seller ? (obj.seller = seller) : "";
+      obj.link = url;
+      list.push(obj);
+      console.log("pagina:", sitePages);
+      sitePages++;
+    });
+
+    for (const url of links) {
+      await cluster.queue(url);
+    }
+
+    await cluster.idle();
+    await cluster.close();
+
+    fs.writeFile("values.json", JSON.stringify(list, null, 2), (err) => {
+      if (err) {
+        throw new Error("something went wrong");
+      }
+      console.log("finished");
+    });
+
+    await page.waitForTimeout(3000);
     await browser.close();
   },
   bye: function () {
