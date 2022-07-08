@@ -4,7 +4,7 @@ Basta rodar node index.js e escrever a opção currencyConverter (outras opçõe
 
 Após selecionar a opção, o bot ajudará com os próximos passos.
 
-#Comandos:
+# Comandos:
 
 kabum: faz buscas por produtos no site Kabum
 
