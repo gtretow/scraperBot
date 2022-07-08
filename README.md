@@ -6,6 +6,7 @@ Após selecionar a opção, o bot ajudará com os próximos passos.
 
 Comandos:
 
+kabum: faz buscas por produtos no site Kabum
 mercadoLivre: faz buscas de produtos no ML
 instagram: traz fotos de um perfil da rede
-currencyConverter: converte o valor de uma moeda
+converterMoeda: converte o valor de uma moeda

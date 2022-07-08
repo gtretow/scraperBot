@@ -3,10 +3,16 @@ const readlineSync = require("readline-sync");
 const { Cluster } = require("puppeteer-cluster");
 const fs = require("fs");
 
-console.log("Informe o que você deseja fazer");
+console.log("%cEscreva a opção que desejar: ", "color:red");
+console.log(" ");
+console.log("converterMoeda -  converte o valor de uma moeda");
+console.log("instagram -  traz fotos de um perfil da rede");
+console.log("mercadoLivre -  faz buscas de produtos no ML");
+console.log("kabum -  faz buscas por produtos no site Kabum");
+console.log("bye -  sair");
 
 readlineSync.promptCLLoop({
-  currencyConverter: async function () {
+  converterMoeda: async function () {
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
     const moedaBase =
@@ -85,6 +91,7 @@ readlineSync.promptCLLoop({
     cluster.on("taskerror", (err, data) => {
       console.log(`error crawling ${data}: ${err.message}`);
     });
+
     await cluster.task(async ({ page, data: url }) => {
       await page.goto(url);
 
@@ -134,8 +141,78 @@ readlineSync.promptCLLoop({
     await page.waitForTimeout(3000);
     await browser.close();
   },
+  kabum: async function () {
+    const browser = await puppeteer.launch();
+    const cluster = await Cluster.launch({
+      concurrency: Cluster.CONCURRENCY_PAGE,
+      maxConcurrency: 10,
+    });
+
+    let sitePages = 1;
+    const list = [];
+
+    let search = readlineSync.question("Informe sua pesquisa:");
+    const page = await browser.newPage();
+    await page.goto(`https://www.kabum.com.br/`);
+
+    await page.type("#input-busca", search);
+
+    await Promise.all([page.waitForNavigation(), page.keyboard.press("Enter")]);
+
+    console.log("iniciando busca por produtos");
+
+    const links = await page.$$eval(".productCard > a", (el) =>
+      el.map((link) => link.href).slice(0, 10)
+    );
+
+    cluster.on("taskerror", (err, data) => {
+      console.log(
+        `Não foi possível pegar as informações do link: ${data}: ${err.message}`
+      );
+    });
+
+    await cluster.task(async ({ page, data: url }) => {
+      await page.goto(url);
+
+      await page.waitForSelector(".sc-fduepK.dIrAfc");
+      const title = await page.$eval(
+        ".sc-fduepK.dIrAfc",
+        (element) => element.innerText
+      );
+
+      const price = await page.$eval(
+        ".sc-iaUDOe.gSoXAC.finalPrice",
+        (element) => element.innerText
+      );
+
+      const obj = {};
+      obj.title = title;
+      obj.price = price;
+      obj.link = url;
+      list.push(obj);
+      console.log("pagina:", sitePages);
+      sitePages++;
+    });
+
+    for (const url of links) {
+      await cluster.queue(url);
+    }
+
+    await cluster.idle();
+    await cluster.close();
+
+    fs.writeFile("kabum.json", JSON.stringify(list, null, 2), (err) => {
+      if (err) {
+        throw new Error("something went wrong");
+      }
+      console.log("finished");
+    });
+
+    await page.waitForTimeout(3000);
+    await browser.close();
+  },
   bye: function () {
-    console.log("bye");
-    return;
+    console.log("Até breve!");
+    return true;
   },
 });
