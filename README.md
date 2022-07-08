@@ -1,8 +1,10 @@
 Bot simples para praticar web scraping
 
-Basta rodar node index.js e escrever a opção currencyConverter (outras opções serão implementadas no futuro).
+# Como executar:
 
-Após selecionar a opção, o bot ajudará com os próximos passos.
+Basta clicar no arquivo bot.bat
+
+Após selecionar a opção que deseja executar, o bot ajudará com os próximos passos.
 
 # Comandos:
 
