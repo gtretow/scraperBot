@@ -63,7 +63,7 @@ readlineSync.promptCLLoop({
     const browser = await puppeteer.launch();
     const cluster = await Cluster.launch({
       concurrency: Cluster.CONCURRENCY_PAGE,
-      maxConcurrency: 10,
+      maxConcurrency: 20,
     });
 
     let sitePages = 1;
@@ -142,7 +142,7 @@ readlineSync.promptCLLoop({
     await browser.close();
   },
   kabum: async function () {
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({ headless: false });
     const cluster = await Cluster.launch({
       concurrency: Cluster.CONCURRENCY_PAGE,
       maxConcurrency: 10,
@@ -156,7 +156,6 @@ readlineSync.promptCLLoop({
     await page.goto(`https://www.kabum.com.br/`);
 
     await page.type("#input-busca", search);
-
     await Promise.all([page.waitForNavigation(), page.keyboard.press("Enter")]);
 
     console.log("iniciando busca por produtos");
@@ -174,14 +173,11 @@ readlineSync.promptCLLoop({
     await cluster.task(async ({ page, data: url }) => {
       await page.goto(url);
 
-      await page.waitForSelector(".sc-fduepK.dIrAfc");
-      const title = await page.$eval(
-        ".sc-fduepK.dIrAfc",
-        (element) => element.innerText
-      );
+      await page.waitForSelector(".container-purchase");
+      const title = await page.$eval("h1", (element) => element.innerText);
 
       const price = await page.$eval(
-        ".sc-iaUDOe.gSoXAC.finalPrice",
+        ".finalPrice",
         (element) => element.innerText
       );
 
